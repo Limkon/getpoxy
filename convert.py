@@ -13,12 +13,17 @@ for file in data_files:
     with open(file_path, "r") as f:
         content = f.read()
 
+        # 检查文件内容是否包含 Base64 字符
+        if not base64.b64encode(base64.b64decode(content)) == content.encode():
+            # 文件内容不是 Base64 编码，跳过该文件
+            continue
+
         try:
             # 尝试解密 Base64 编码的内容
-            decoded_content = base64.urlsafe_b64decode(content).decode()
+            decoded_content = base64.b64decode(content).decode()
             merged_content.add(decoded_content)
         except (base64.binascii.Error, UnicodeDecodeError):
-            # 文件内容不是 Base64 编码或解码失败，跳过该文件
+            # 解码失败，跳过该文件
             continue
 
 # 输出合并且去重后的结果到文件
