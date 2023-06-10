@@ -47,17 +47,20 @@ jobs:
         run: |
           node read_website.js
 
-      - name: 转换订阅
-        env:
-          TZ: 'Asia/Shanghai'
+      - name: 调用转换脚本
         run: |
-          node convert.js
+          python convert.py
+
+      - name: 保存结果文件
+        run: |
+          mkdir -p result
+          cp data/rest.txt result/
 
       - name: 上传文件
         uses: actions/upload-artifact@v3
         with:
           name: website-content
-          path: data
+          path: result/rest.txt
 
       - name: 更新 README.md
         run: |
