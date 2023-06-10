@@ -32,9 +32,8 @@ function convertSubscriptions() {
   const subscriptions = [];
 
   for (const file of subscriptionFiles) {
-    const content = fs.readFileSync(`data/${file}`, 'utf-8').trim();
-
     try {
+      const content = fs.readFileSync(`data/${file}`, 'utf-8').trim();
       const subscriptionConfig = JSON.parse(content);
       const convertedSubscription = convertSubscriptionToUniversal(subscriptionConfig);
       subscriptions.push(convertedSubscription);
