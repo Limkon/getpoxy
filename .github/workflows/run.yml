@@ -1,4 +1,4 @@
-name: 读取网站内容
+name: 读取订阅
 
 on:
   workflow_dispatch:
