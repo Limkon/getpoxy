@@ -54,12 +54,6 @@ jobs:
         run: |
           python convert.py
 
-      - name: 上传文件
-        uses: actions/upload-artifact@v3
-        with:
-          name: website-content
-          path: result/rest.txt
-
       - name: 更新 README.md
         run: |
           if [[ -f README.md ]]; then
