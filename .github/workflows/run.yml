@@ -1,0 +1,76 @@
+name: 读取网站内容
+
+on:
+  workflow_dispatch:
+  
+  schedule:
+    - cron: '0 23 * * *'
+
+jobs:
+  fetch-website-content:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码库
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+
+      - name: 安装依赖
+        run: |
+          npm install puppeteer-core
+          npm install moment
+
+      - name: 检查结果目录
+        run: |
+          if [ ! -d "data" ]; then
+            mkdir data
+          fi
+
+      - name: 延时
+        run: |
+          delay=$((RANDOM % 9 + 1))
+          sleep "$delay"
+
+      - name: 读取网站内容
+        env:
+          TZ: 'Asia/Shanghai'
+        run: |
+          node read_website.js
+
+      - name: 上传文件
+        uses: actions/upload-artifact@v3
+        with:
+          name: website-content
+          path: data
+
+      - name: 更新 README.md
+        run: |
+          if [[ -f README.md ]]; then
+            cp README.md README.md.bak
+            head -n 3 README.md.bak > README.md
+            if [[ -f README.md.bak ]]; then
+              tail -n 7 README.md.bak >> README.md
+              rm README.md.bak
+            fi
+          fi
+          echo "### 备份：$(TZ='Asia/Shanghai' date '+%A %Y年%m月%d日 %T')" >> README.md
+          cat README.md >> README.md.tmp
+          mv README.md.tmp README.md
+
+      - name: 设置 Git 配置
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: 提交文件到主分支
+        continue-on-error: true
+        run: |
+          git add .
+          git commit -m "Add website content"
+          git push
