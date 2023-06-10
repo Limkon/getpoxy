@@ -79,8 +79,9 @@ const puppeteer = require('puppeteer-core');
       }
     }
 
-    // 保存成功获取内容的网址列表到文件
-    fs.writeFileSync('urls', successfulUrls.join('\n'));
+    // 去重并保存成功获取内容的网址列表到文件
+    const uniqueSuccessfulUrls = [...new Set(successfulUrls)];
+    fs.writeFileSync('urls', uniqueSuccessfulUrls.join('\n'));
 
     await browser.close();
     console.log('所有网站内容保存完成！');
