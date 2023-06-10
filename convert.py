@@ -17,8 +17,9 @@ for file in data_files:
             # 尝试解密 Base64 编码的内容
             decoded_content = base64.b64decode(content).decode(errors='ignore')
             merged_content.add(decoded_content)
-        except (base64.binascii.Error, UnicodeDecodeError):
-            # 内容不是 Base64 编码或包含非 ASCII 字符，跳过该文件
+        except Exception as e:
+            # 内容不是 Base64 编码或包含非 ASCII 字符，跳过该文件并打印错误信息
+            print(f"Error processing file {file}: {str(e)}")
             continue
 
 # 输出合并且去重后的结果到文件
