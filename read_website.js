@@ -106,7 +106,7 @@ function isBase64(str) {
 }
 
 function isSpecialFormat(str) {
-  const specialFormatRegex = /vmess:\/\/|clash:\/\/|ss:\/\/|vlss:\/\/;
+  const specialFormatRegex = /vmess:\/\/|clash:\/\/|ss:\/\/|vlss:\/\//;
   return specialFormatRegex.test(str);
 }
 
