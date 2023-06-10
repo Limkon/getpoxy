@@ -51,8 +51,6 @@ jobs:
         run: |
           python convert.py
 
-      
-
       - name: 上传文件
         uses: actions/upload-artifact@v3
         with:
@@ -62,16 +60,19 @@ jobs:
       - name: 更新 README.md
         run: |
           if [[ -f README.md ]]; then
-            cp README.md README.md.bak
-            head -n 3 README.md.bak > README.md
-            if [[ -f README.md.bak ]]; then
-              tail -n 7 README.md.bak >> README.md
-              rm README.md.bak
-            fi
+            # 读取当前时间
+            timestamp=$(TZ='Asia/Shanghai' date '+%A %Y年%m月%d日 %T')
+            # 创建临时文件
+            echo "### 更新：$timestamp" > README.md.tmp
+            # 将新的内容追加到临时文件中
+            cat README.md >> README.md.tmp
+            # 替换原始 README.md 文件
+            mv README.md.tmp README.md
           fi
-          echo "### 更新：$(TZ='Asia/Shanghai' date '+%A %Y年%m月%d日 %T')" >> README.md
-          cat README.md >> README.md.tmp
-          mv README.md.tmp README.md
+
+      - name: 清除 data 目录
+        run: |
+          rm -rf data/*
 
       - name: 设置 Git 配置
         run: |
