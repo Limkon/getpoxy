@@ -53,7 +53,9 @@ try {
   console.log(mergedSubscriptions);
 
   fs.writeFileSync('result/rest.txt', mergedSubscriptions);
-  console.log(`::set-output name=merged_subscriptions::${mergedSubscriptions}`);
+  
+  const environmentFileContent = `MERGED_SUBSCRIPTIONS=${mergedSubscriptions}`;
+  fs.writeFileSync('result/environment.env', environmentFileContent);
 } catch (error) {
   console.log('An error occurred while processing subscriptions:');
   console.log(error);
