@@ -35,6 +35,9 @@ jobs:
           if [ ! -d "result" ]; then
             mkdir result
           fi
+          if [ ! -d "share" ]; then
+            mkdir share
+          fi
       
       - name: 延时
         run: |
