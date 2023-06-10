@@ -79,9 +79,20 @@ const puppeteer = require('puppeteer-core');
       }
     }
 
-    // 去重并保存成功获取内容的网址列表到文件
+    // 比较成功获取内容的网址列表和原始的urls文件内容，只有当列表有更改时才会保存
     const uniqueSuccessfulUrls = [...new Set(successfulUrls)];
-    fs.writeFileSync('urls', uniqueSuccessfulUrls.join('\n'));
+    const originalUrls = fs
+      .readFileSync('urls', 'utf-8')
+      .split('\n')
+      .map(url => url.trim());
+    const hasChanges = JSON.stringify(uniqueSuccessfulUrls) !== JSON.stringify(originalUrls);
+
+    if (hasChanges) {
+      fs.writeFileSync('urls', uniqueSuccessfulUrls.join('\n'));
+      console.log('成功获取内容的网址列表已保存到文件！');
+    } else {
+      console.log('成功获取内容的网址列表与原始列表无更改，不保存文件。');
+    }
 
     await browser.close();
     console.log('所有网站内容保存完成！');
