@@ -2,54 +2,59 @@ const fs = require('fs');
 const base64 = require('base64-js');
 
 function convertSubscriptionToUniversal(subscriptionConfig) {
-  // 根据你的转换逻辑实现订阅转换
-  // 这里只是一个示例，假设将原有订阅配置转换为通用订阅格式
   const { server, port, cipher, password, type } = subscriptionConfig;
-
   let convertedSubscription = '';
+
   if (type === 'ss') {
-    convertedSubscription = `ss://${base64.fromByteArray(`${cipher}:${password}@${server}:${port}`).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
+    const ssConfig = `${cipher}:${password}@${server}:${port}`;
+    const base64SSConfig = base64.fromByteArray(Buffer.from(ssConfig, 'utf-8'));
+    convertedSubscription = `ss://${base64SSConfig.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
   } else if (type === 'ssr') {
-    convertedSubscription = `ssr://${base64.fromByteArray(`${server}:${port}:${cipher}:${type}:${base64.fromByteArray(password)}:${base64.fromByteArray(password)}:${base64.fromByteArray('obfsparam')}?remarks=${base64.fromByteArray('remarks')}&group=${base64.fromByteArray('group')}`)}`;
+    const ssrConfig = `${server}:${port}:${cipher}:${type}:${password}:${password}:obfsparam?remarks=remarks&group=group`;
+    const base64SSRConfig = base64.fromByteArray(Buffer.from(ssrConfig, 'utf-8'));
+    convertedSubscription = `ssr://${base64SSRConfig}`;
   } else if (type === 'trojan') {
-    convertedSubscription = `trojan://${base64.fromByteArray(`${password}@${server}:${port}`)}`;
+    const trojanConfig = `${password}@${server}:${port}`;
+    const base64TrojanConfig = base64.fromByteArray(Buffer.from(trojanConfig, 'utf-8'));
+    convertedSubscription = `trojan://${base64TrojanConfig}`;
   }
 
   return convertedSubscription;
 }
 
 function removeDuplicateSubscriptions(subscriptions) {
-  const uniqueSubscriptions = new Set(subscriptions);
-  return Array.from(uniqueSubscriptions);
+  const uniqueSubscriptions = [...new Set(subscriptions)];
+  return uniqueSubscriptions;
 }
 
 function convertSubscriptions() {
   const subscriptionFiles = fs.readdirSync('data');
-
   const subscriptions = [];
 
   for (const file of subscriptionFiles) {
     const content = fs.readFileSync(`data/${file}`, 'utf-8').trim();
 
-    // 解析订阅配置
-    const subscriptionConfig = JSON.parse(content);
-    // 转换订阅配置为通用格式
-    const convertedSubscription = convertSubscriptionToUniversal(subscriptionConfig);
-
-    subscriptions.push(convertedSubscription);
+    try {
+      const subscriptionConfig = JSON.parse(content);
+      const convertedSubscription = convertSubscriptionToUniversal(subscriptionConfig);
+      subscriptions.push(convertedSubscription);
+    } catch (error) {
+      console.log(`Error parsing JSON file: ${file}`);
+      console.log(error);
+    }
   }
 
   const mergedSubscriptions = removeDuplicateSubscriptions(subscriptions);
-
   return mergedSubscriptions.join('\n');
 }
 
-const mergedSubscriptions = convertSubscriptions();
+try {
+  const mergedSubscriptions = convertSubscriptions();
+  console.log(mergedSubscriptions);
 
-console.log(mergedSubscriptions);
-
-// 将合并后的订阅输出为 rest.txt 文件
-fs.writeFileSync('result/rest.txt', mergedSubscriptions);
-
-// 将合并后的订阅输出为输出参数，供 GitHub Actions 使用
-console.log(`::set-output name=merged_subscriptions::${mergedSubscriptions}`);
+  fs.writeFileSync('result/rest.txt', mergedSubscriptions);
+  console.log(`::set-output name=merged_subscriptions::${mergedSubscriptions}`);
+} catch (error) {
+  console.log('An error occurred while processing subscriptions:');
+  console.log(error);
+}
