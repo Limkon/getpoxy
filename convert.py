@@ -37,7 +37,6 @@ for file in data_files:
 
 # 输出合并且去重后的结果到文件
 output_dir = "result"  # 修改保存目录
-os.makedirs(output_dir, exist_ok=True)  # 创建保存目录（如果不存在）
 output_file = os.path.join(output_dir, "rest.txt")  # 修改保存文件名
 
 with open(output_file, 'w') as file:
