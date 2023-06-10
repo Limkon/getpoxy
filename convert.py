@@ -44,7 +44,7 @@ for content in merged_content:
 
 # 输出合并且转换为Base64编码的结果到文件
 output_dir = "result"  # 修改保存目录
-output_file = os.path.join(output_dir, "rsu.txt")  # 修改保存文件名
+output_file = os.path.join(output_dir, "rest.txt")  # 修改保存文件名
 
 with open(output_file, 'w') as file:
     for data in converted_content:
