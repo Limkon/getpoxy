@@ -17,35 +17,29 @@ for file in data_files:
 
         # 判断文件类型
         if file.endswith(".json"):
-            # 处理JSON文件
-            try:
-                data = json.loads(content)
-                merged_content.add(json.dumps(data))
-            except ValueError:
-                print(f"Error: Invalid JSON format in file {file}")
+            # 跳过处理JSON文件
+            continue
         elif file.endswith(".yaml"):
-            # 处理YAML文件
-            try:
-                data = yaml.safe_load(content)
-                merged_content.add(yaml.dump(data))
-            except yaml.YAMLError:
-                print(f"Error: Invalid YAML format in file {file}")
+            # 跳过处理YAML文件
+            continue
         elif file.endswith(".txt"):
             # 处理文本文件
             merged_content.add(content)
+        elif file.endswith(".base64"):
+            # 解密Base64编码的内容
+            try:
+                decoded_content = base64.b64decode(content).decode()
+                merged_content.add(decoded_content)
+            except base64.binascii.Error:
+                print(f"Error: Invalid Base64 encoding in file {file}")
         else:
             print(f"Warning: Unknown file type for file {file}")
 
-# 转换为Base64编码
-converted_content = []
-for content in merged_content:
-    encoded_content = base64.b64encode(content.encode()).decode()
-    converted_content.append(encoded_content)
-
-# 输出合并且转换为Base64编码的结果到文件
+# 输出合并且去重后的结果到文件
 output_dir = "result"  # 修改保存目录
+os.makedirs(output_dir, exist_ok=True)  # 创建保存目录（如果不存在）
 output_file = os.path.join(output_dir, "rest.txt")  # 修改保存文件名
 
 with open(output_file, 'w') as file:
-    for data in converted_content:
+    for data in merged_content:
         file.write(data + '\n')
