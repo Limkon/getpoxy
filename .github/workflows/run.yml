@@ -59,7 +59,7 @@ jobs:
               rm README.md.bak
             fi
           fi
-          echo "### 备份：$(TZ='Asia/Shanghai' date '+%A %Y年%m月%d日 %T')" >> README.md
+          echo "### 更新：$(TZ='Asia/Shanghai' date '+%A %Y年%m月%d日 %T')" >> README.md
           cat README.md >> README.md.tmp
           mv README.md.tmp README.md
 
