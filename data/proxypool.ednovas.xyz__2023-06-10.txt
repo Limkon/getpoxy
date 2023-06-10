@@ -1,0 +1,2 @@
+
+Fatal error: Uncaught Error: Call to undefined function eregi() in /var/www/www.arixlash.com/redboxlab/tfunction.php:495 Stack trace: #0 /var/www/www.arixlash.com/redboxlab/temp_rewrite.php(973): get_real_ip() #1 /var/www/www.arixlash.com/redboxlab/temp_rewrite.php(32): th() #2 /var/www/www.arixlash.com/redboxlab/temp_rewrite.php(24): replace_index() #3 /var/www/www.arixlash.com/index.php(19): index_temp() #4 {main} thrown in /var/www/www.arixlash.com/redboxlab/tfunction.php on line 495
