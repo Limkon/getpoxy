@@ -28,12 +28,6 @@ const puppeteer = require('puppeteer-core');
         // 尝试不同的选择器
         const selectors = [
           '#app',                 // ID 选择器
-          '.content',             // 类选择器
-          'div',                  // 元素选择器
-          '.my-class',            // 类选择器
-          '#my-id',               // ID 选择器
-          '[name="my-name"]',     // 属性选择器
-          '.my-parent .my-child', // 后代选择器
         ];
 
         let content = '';
