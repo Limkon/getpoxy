@@ -68,9 +68,9 @@ const puppeteer = require('puppeteer-core');
           }
         }
 
-        // 检测内容是否为BASE64编码
-        if (!isBase64(content)) {
-          console.error(`获取的 ${url} 内容不是BASE64编码，将从URL列表中删除`);
+        // 检测内容是否为 BASE64 编码或特定格式
+        if (!isBase64(content) && !isSpecialFormat(content)) {
+          console.error(`获取的 ${url} 内容既不是 BASE64 编码也不符合特定格式，将从 URL 列表中删除`);
           failedUrls.push(url);
           continue;
         }
@@ -89,17 +89,8 @@ const puppeteer = require('puppeteer-core');
       }
     }
 
-    // 从原始的urls文件内容中移除失败的URL
-    const originalUrls = fs
-      .readFileSync('urls', 'utf-8')
-      .split('\n')
-      .map(url => url.trim())
-      .filter(url => url !== '');
-
-    const updatedUrls = originalUrls.filter(url => !failedUrls.includes(url));
-
-    fs.writeFileSync('urls', updatedUrls.join('\n'));
-    console.log('更新后的URL列表已保存到文件！');
+    // 更新 URL 列表文件
+    updateUrlsFile(failedUrls);
 
     await browser.close();
     console.log('所有网站内容保存完成！');
@@ -112,4 +103,21 @@ const puppeteer = require('puppeteer-core');
 function isBase64(str) {
   const base64Regex = /^(data:.*?;base64,)?([A-Za-z0-9+/=])+$/;
   return base64Regex.test(str);
+}
+
+function isSpecialFormat(str) {
+  const specialFormatRegex = /vmess:\/\/|clash:\/\/|ss:\/\/|vlss:\/\/;
+  return specialFormatRegex.test(str);
+}
+
+function updateUrlsFile(failedUrls) {
+  const originalUrls = fs
+    .readFileSync('urls', 'utf-8')
+    .split('\n')
+    .map(url => url.trim());
+
+  const updatedUrls = originalUrls.filter(url => !failedUrls.includes(url));
+
+  fs.writeFileSync('urls', updatedUrls.join('\n'));
+  console.log('更新后的 URL 列表已保存到文件！');
 }
