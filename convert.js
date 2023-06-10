@@ -44,5 +44,8 @@ const mergedSubscriptions = convertSubscriptions();
 
 console.log(mergedSubscriptions);
 
+// 将合并后的订阅输出为 rest.txt 文件
+fs.writeFileSync('result/rest.txt', mergedSubscriptions);
+
 // 将合并后的订阅输出为输出参数，供 GitHub Actions 使用
 console.log(`::set-output name=merged_subscriptions::${mergedSubscriptions}`);
