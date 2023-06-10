@@ -37,13 +37,13 @@ with open(output_file, 'w') as file:
     for data in merged_content:
         file.write(data + '\n')
 
-# 去除重复的行
+# 去除重复的行和空白行
 unique_lines = set()
 final_content = []
 with open(output_file, 'r') as file:
     for line in file:
         line = line.strip()
-        if line not in unique_lines:
+        if line and line not in unique_lines:
             final_content.append(line)
             unique_lines.add(line)
 
