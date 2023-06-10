@@ -31,17 +31,26 @@ jobs:
           if [ ! -d "data" ]; then
             mkdir data
           fi
-
+          if [ ! -d "result" ]; then
+            mkdir result
+          fi
+      
       - name: 延时
         run: |
           delay=$((RANDOM % 9 + 1))
           sleep "$delay"
 
-      - name: 读取网站内容
+      - name: 读取订阅
         env:
           TZ: 'Asia/Shanghai'
         run: |
           node read_website.js
+
+      - name: 转换订阅
+        env:
+          TZ: 'Asia/Shanghai'
+        run: |
+          node convert.js
 
       - name: 上传文件
         uses: actions/upload-artifact@v3
