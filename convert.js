@@ -1,15 +1,21 @@
 const fs = require('fs');
 const base64 = require('base64-js');
 
-function convertSubscriptionToUniversal(subscriptionUrl) {
+function convertSubscriptionToUniversal(subscriptionConfig) {
   // 根据你的转换逻辑实现订阅转换
-  // 这里只是一个示例，假设将非通用订阅链接转换为通用订阅链接
-  if (!subscriptionUrl.startsWith('universal://')) {
-    return `universal://${subscriptionUrl}`;
+  // 这里只是一个示例，假设将原有订阅配置转换为通用订阅格式
+  const { server, port, cipher, password, type } = subscriptionConfig;
+
+  let convertedSubscription = '';
+  if (type === 'ss') {
+    convertedSubscription = `ss://${base64.fromByteArray(`${cipher}:${password}@${server}:${port}`).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}`;
+  } else if (type === 'ssr') {
+    convertedSubscription = `ssr://${base64.fromByteArray(`${server}:${port}:${cipher}:${type}:${base64.fromByteArray(password)}:${base64.fromByteArray(password)}:${base64.fromByteArray('obfsparam')}?remarks=${base64.fromByteArray('remarks')}&group=${base64.fromByteArray('group')}`)}`;
+  } else if (type === 'trojan') {
+    convertedSubscription = `trojan://${base64.fromByteArray(`${password}@${server}:${port}`)}`;
   }
 
-  // 如果链接已经是通用订阅链接，则直接返回
-  return subscriptionUrl;
+  return convertedSubscription;
 }
 
 function removeDuplicateSubscriptions(subscriptions) {
@@ -25,17 +31,15 @@ function convertSubscriptions() {
   for (const file of subscriptionFiles) {
     const content = fs.readFileSync(`data/${file}`, 'utf-8').trim();
 
-    // 检测订阅类型，根据需要调整判断逻辑
-    if (content.startsWith('vmess://') || content.startsWith('ss://')) {
-      const decodedSubscription = base64.toByteArray(content).toString('utf-8');
-      subscriptions.push(decodedSubscription);
-    } else {
-      subscriptions.push(content);
-    }
+    // 解析订阅配置
+    const subscriptionConfig = JSON.parse(content);
+    // 转换订阅配置为通用格式
+    const convertedSubscription = convertSubscriptionToUniversal(subscriptionConfig);
+
+    subscriptions.push(convertedSubscription);
   }
 
-  const convertedSubscriptions = subscriptions.map(convertSubscriptionToUniversal);
-  const mergedSubscriptions = removeDuplicateSubscriptions(convertedSubscriptions);
+  const mergedSubscriptions = removeDuplicateSubscriptions(subscriptions);
 
   return mergedSubscriptions.join('\n');
 }
