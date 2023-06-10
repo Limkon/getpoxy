@@ -22,6 +22,7 @@ const puppeteer = require('puppeteer-core');
       .filter(url => url !== '');
 
     const successfulUrls = [];
+    const failedUrls = [];
 
     for (const url of urls) {
       try {
@@ -62,8 +63,16 @@ const puppeteer = require('puppeteer-core');
             console.log(`通过自定义代码成功提取了 ${url} 的内容`);
           } else {
             console.error(`自定义代码也无法获取 ${url} 的内容`);
+            failedUrls.push(url);
             continue;
           }
+        }
+
+        // 检测内容是否为BASE64编码
+        if (!isBase64(content)) {
+          console.error(`获取的 ${url} 内容不是BASE64编码，将从URL列表中删除`);
+          failedUrls.push(url);
+          continue;
         }
 
         const date = moment().format('YYYY-MM-DD');
@@ -76,23 +85,21 @@ const puppeteer = require('puppeteer-core');
         console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
       } catch (error) {
         console.error(`处理 ${url} 失败：${error.message}`);
+        failedUrls.push(url);
       }
     }
 
-    // 比较成功获取内容的网址列表和原始的urls文件内容，只有当列表有更改时才会保存
-    const uniqueSuccessfulUrls = [...new Set(successfulUrls)];
+    // 从原始的urls文件内容中移除失败的URL
     const originalUrls = fs
       .readFileSync('urls', 'utf-8')
       .split('\n')
-      .map(url => url.trim());
-    const hasChanges = JSON.stringify(uniqueSuccessfulUrls) !== JSON.stringify(originalUrls);
+      .map(url => url.trim())
+      .filter(url => url !== '');
 
-    if (hasChanges) {
-      fs.writeFileSync('urls', uniqueSuccessfulUrls.join('\n'));
-      console.log('成功获取内容的网址列表已保存到文件！');
-    } else {
-      console.log('成功获取内容的网址列表与原始列表无更改，不保存文件。');
-    }
+    const updatedUrls = originalUrls.filter(url => !failedUrls.includes(url));
+
+    fs.writeFileSync('urls', updatedUrls.join('\n'));
+    console.log('更新后的URL列表已保存到文件！');
 
     await browser.close();
     console.log('所有网站内容保存完成！');
@@ -101,3 +108,8 @@ const puppeteer = require('puppeteer-core');
     process.exit(1);
   }
 })();
+
+function isBase64(str) {
+  const base64Regex = /^(data:.*?;base64,)?([A-Za-z0-9+/=])+$/;
+  return base64Regex.test(str);
+}
