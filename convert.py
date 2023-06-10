@@ -15,7 +15,7 @@ for file in data_files:
 
         try:
             # 尝试解密 Base64 编码的内容
-            decoded_content = base64.standard_b64decode(content).decode(errors='ignore')
+            decoded_content = base64.b64decode(content).decode(errors='ignore')
             merged_content.add(decoded_content)
         except (base64.binascii.Error, UnicodeDecodeError):
             # 解码失败或包含非 Base64 字符，跳过该文件
