@@ -75,7 +75,7 @@ jobs:
 
       - name: 清除 data 目录
         run: |
-          rm -rf data/*
+          find data/ -type f -exec rm {} +
 
       - name: 设置 Git 配置
         run: |
