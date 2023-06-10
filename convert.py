@@ -43,10 +43,11 @@ for content in merged_content:
     converted_content.append(encoded_content)
 
 # 输出合并且转换为Base64编码的结果到文件
-output_file = "rest.txt"  # 修改保存路径和文件名
+output_dir = "result"  # 修改保存目录
+output_file = os.path.join(output_dir, "rest.txt")  # 修改保存文件名
 
-# 创建空的rest.txt文件
-open(output_file, 'a').close()
+# 创建result目录
+os.makedirs(output_dir, exist_ok=True)
 
 with open(output_file, 'w') as file:
     for data in converted_content:
