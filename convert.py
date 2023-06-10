@@ -1,5 +1,10 @@
 import os
 import base64
+import socket
+
+# 测试网址信息
+node_ip = "google.com"
+node_port = 80
 
 # 读取数据文件列表
 data_dir = "data"  # 替换为你的数据文件所在目录
@@ -51,13 +56,29 @@ with open(output_file, 'r') as file:
 with open(output_file, 'w') as file:
     for line in final_content:
         file.write(line + '\n')
-# 将最终结果 rest.txt 使用 BASE64 编码后保存到 share/tongyy 文件中
+
+# 进行节点连接测试
+tested_content = []
+for line in final_content:
+    try:
+        with socket.create_connection((node_ip, node_port), timeout=5) as sock:
+            tested_content.append(line)
+    except socket.error as e:
+        print(f"Error connecting to node {node_ip}:{node_port}: {str(e)}")
+
+# 保存测试后的内容到文件
+tested_output_file = os.path.join(output_dir, "tested_rest.txt")  # 修改保存文件名
+with open(tested_output_file, 'w') as file:
+    for line in tested_content:
+        file.write(line + '\n')
+
+# 将最终结果 tested_rest.txt 使用 BASE64 编码后保存到 share/tongyy 文件中
 output_share_dir = "share"  # 修改分享目录
 os.makedirs(output_share_dir, exist_ok=True)  # 创建分享目录（如果不存在）
 output_share_file = os.path.join(output_share_dir, "tongyy")  # 修改保存文件名
 
 # 将最终内容进行 BASE64 编码
-encoded_content = base64.b64encode('\n'.join(final_content).encode()).decode()
+encoded_content = base64.b64encode('\n'.join(tested_content).encode()).decode()
 
 # 保存编码后的内容到文件
 with open(output_share_file, 'w') as file:
