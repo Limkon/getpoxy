@@ -13,14 +13,20 @@ for file in data_files:
     with open(file_path, "r") as f:
         content = f.read()
 
-        try:
-            # 尝试解密 Base64 编码的内容
-            decoded_content = base64.b64decode(content).decode(errors='ignore')
-            merged_content.add(decoded_content)
-        except Exception as e:
-            # 内容不是 Base64 编码或包含非 ASCII 字符，跳过该文件并打印错误信息
-            print(f"Error processing file {file}: {str(e)}")
+        if file.endswith(".json") or file.endswith(".yaml"):
+            # 如果是 JSON 或 YAML 文件，直接跳过
             continue
+        elif file.endswith(".txt"):
+            try:
+                # 尝试解密 Base64 编码的内容
+                decoded_content = base64.b64decode(content).decode()
+                merged_content.add(decoded_content)
+            except Exception as e:
+                # 内容不是 Base64 编码，跳过该文件并打印错误信息
+                print(f"Error processing file {file}: {str(e)}")
+                continue
+        else:
+            print(f"Warning: Unknown file type for file {file}")
 
 # 输出合并且去重后的结果到文件
 output_dir = "result"  # 修改保存目录
