@@ -21,6 +21,8 @@ const puppeteer = require('puppeteer-core');
       .map(url => url.trim())
       .filter(url => url !== '');
 
+    const successfulUrls = [];
+
     for (const url of urls) {
       try {
         await page.goto(url);
@@ -70,11 +72,15 @@ const puppeteer = require('puppeteer-core');
 
         fs.writeFileSync(fileName, content);
 
+        successfulUrls.push(url);
         console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
       } catch (error) {
         console.error(`处理 ${url} 失败：${error.message}`);
       }
     }
+
+    // 保存成功获取内容的网址列表到文件
+    fs.writeFileSync('urls', successfulUrls.join('\n'));
 
     await browser.close();
     console.log('所有网站内容保存完成！');
