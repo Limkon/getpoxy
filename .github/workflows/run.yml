@@ -52,7 +52,6 @@ jobs:
         env:
           TZ: 'Asia/Shanghai'
         run: |
-          node readII_website.js
           node read_website.js
 
       - name: 调用转换脚本
