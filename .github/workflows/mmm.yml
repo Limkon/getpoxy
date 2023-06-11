@@ -1,4 +1,4 @@
-name: 读取订阅
+name: 猎取订阅
 
 on:
   workflow_dispatch:
