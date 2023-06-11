@@ -26,6 +26,9 @@ jobs:
           npm install puppeteer-core
           npm install moment
           npm install base64-js
+          
+      - name: Remove duplicate URLs
+        run: python remove_duplicates.py urls
 
       - name: 检查结果目录
         run: |
