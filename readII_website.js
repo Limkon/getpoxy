@@ -111,7 +111,7 @@ const puppeteer = require('puppeteer-core');
       });
 
       if (links.length > 0) {
-        fs.writeFileSync(urlsFilePath, links.join('\n'));
+        fs.appendFileSync(urlsFilePath, links.join('\n'));
         console.log(`链接已追加到文件 ${urlsFilePath}`);
       } else {
         console.log('没有找到链接需要追加到文件。');
