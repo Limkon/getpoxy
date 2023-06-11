@@ -78,6 +78,7 @@ jobs:
       - name: 提交文件到主分支
         continue-on-error: true
         run: |
-          git add .
-          git commit -m "Add website content"
-          git push
+         git pull origin master
+         git add .
+         git commit -m "Add website content"
+         git push origin master
