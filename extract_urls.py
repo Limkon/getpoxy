@@ -31,5 +31,5 @@ for url in urls:
     print(url)
 
 # 将提取到的订阅地址追加保存到 "furls" 文件中
-with open("furls", "a") as file:
+with open("furls", "w") as file:
     file.write("\n".join(urls) + "\n")
