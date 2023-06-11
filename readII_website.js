@@ -95,7 +95,7 @@ const puppeteer = require('puppeteer-core');
         return;
       }
 
-      const linkRegex = /((?:https?|ftp):\/\/[^\s/$.?#].[^\s]*)/g;
+      const linkRegex = /(https?:\/\/[^\s]+)/g;
       const links = [];
 
       files.forEach((file) => {
