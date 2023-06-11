@@ -3,7 +3,7 @@ name: Extract URLs from Search
 on:
   workflow_dispatch:
   schedule:
-    - cron: '* * */10 * *'
+    - cron: '0 12 */10 * *'
 
 jobs:
   extract_urls:
