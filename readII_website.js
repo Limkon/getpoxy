@@ -85,39 +85,36 @@ const puppeteer = require('puppeteer-core');
     await browser.close();
     console.log('所有网站内容保存完成！');
 
-  // 提取链接并追加到文件中
-const directoryPath = 'bata';
-const urlsFilePath = 'urls';
+    // 提取链接并追加到文件中
+    const directoryPath = 'bata';
+    const urlsFilePath = 'urls';
 
-fs.readdir(directoryPath, (err, files) => {
-  if (err) {
-    console.error(`无法读取目录 ${directoryPath}：${err}`);
-    return;
-  }
+    fs.readdir(directoryPath, (err, files) => {
+      if (err) {
+        console.error(`无法读取目录 ${directoryPath}：${err}`);
+        return;
+      }
 
-  const linkRegex = /(https?:\/\/[^\s]+)/g;
-  const links = [];
+      const linkRegex = /(https?:\/\/[^\s]+)/g;
+      const links = [];
 
-  files.forEach((file) => {
-    const filePath = path.join(directoryPath, file);
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const extractedLinks = fileContent.match(linkRegex);
+      files.forEach((file) => {
+        const filePath = path.join(directoryPath, file);
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+        const extractedLinks = fileContent.match(linkRegex);
 
-    if (extractedLinks) {
-      links.push(...extractedLinks);
-      console.log(`在文件 ${file} 中找到以下链接：`);
-      console.log(extractedLinks);
-    }
-  });
+        if (extractedLinks) {
+          links.push(...extractedLinks);
+          console.log(`在文件 ${file} 中找到以下链接：`);
+          console.log(extractedLinks);
+        }
+      });
 
-  if (links.length > 0) {
-    fs.writeFileSync(urlsFilePath, links.join('\n'));
-    console.log(`链接已追加到文件 ${urlsFilePath}`);
-  } else {
-    console.log('没有找到链接需要追加到文件。');
-  }
-});
-
+      if (links.length > 0) {
+        fs.writeFileSync(urlsFilePath, links.join('\n'));
+        console.log(`链接已追加到文件 ${urlsFilePath}`);
+      } else {
+        console.log('没有找到链接需要追加到文件。');
       }
     });
   } catch (error) {
