@@ -73,7 +73,7 @@ jobs:
       - name: 清除 data 目录
         run: |
           find data/ -type f -exec rm {} +
-          find bata/ -type f -exec rm {} +
+       
 
       - name: 设置 Git 配置
         run: |
