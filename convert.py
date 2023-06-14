@@ -3,7 +3,7 @@ import base64
 import socket
 
 # 测试网址信息
-node_ip = "google.com"
+node_ip = "http://cachefly.cachefly.net/10mb.test"
 node_port = 80
 
 # 读取数据文件列表
