@@ -33,6 +33,9 @@ jobs:
             mkdir bata
           fi
           
+      - name: Remove duplicate furls
+        run: python remove_duplicates.py furls
+        
       - name: 读取订阅
         env:
           TZ: 'Asia/Shanghai'
