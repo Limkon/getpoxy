@@ -37,21 +37,27 @@ def extract_subscription_urls(search_query, search_engine):
 
 # 从环境变量中获取搜索关键字和搜索引擎
 search_query = os.getenv("SEARCH_QUERY", "订阅节点")
-search_engine = os.getenv("SEARCH_ENGINE", "google")
+search_engine = os.getenv("SEARCH_ENGINE", "google")  # 默认设置为"google"
 
 # 使用Google搜索并随机调整请求头信息
 if search_engine == "google":
-    urls = extract_subscription_urls(search_query, "google")
+    urls_google = extract_subscription_urls(search_query, "google")
     print("Google Search Results:")
-    for url in urls:
+    for url in urls_google:
         print(url)
 
+    # 将搜索引擎设置为"bing"，继续执行搜索
+    search_engine = "bing"
+
 # 使用必应搜索并随机调整请求头信息
-elif search_engine == "bing":
-    urls = extract_subscription_urls(search_query, "bing")
+if search_engine == "bing":
+    urls_bing = extract_subscription_urls(search_query, "bing")
     print("Bing Search Results:")
-    for url in urls:
+    for url in urls_bing:
         print(url)
+
+    # 合并Google和Bing的结果
+    urls = urls_google + urls_bing
 
 # 保存提取到的订阅地址到文件中
 with open("furls", "w") as file:
