@@ -49,7 +49,7 @@ if search_engine == "google":
     # 将搜索引擎设置为"yandex"，继续执行搜索
     search_engine = "yandex"
 
-# 使用必应搜索并随机调整请求头信息
+# 使用yandex搜索并随机调整请求头信息
 if search_engine == "yandex":
     urls_yandex = extract_subscription_urls(search_query, "yandex")
     print("yandex Search Results:")
