@@ -1,4 +1,4 @@
-name: Extract URLs from Search
+name: 搜索订阅
 
 on:
   workflow_dispatch:
