@@ -28,9 +28,11 @@ jobs:
     - name: Extract URLs from Google Search
       id: search
       run: |
-        python extract_urls.py
-      env:
-        SEARCH_QUERY: "订阅节点"
+        declare -a search_queries=("节点订阅" "节点池2023" "VEMSS节点订阅")
+        for query in "${search_queries[@]}"; do
+          echo "Searching for: $query"
+          python extract_urls.py "$query"
+        done
 
     - name: Save URLs to file
       run: |
