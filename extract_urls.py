@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 def extract_subscription_urls(search_query, search_engine):
     if search_engine == "google":
         search_url = f"https://www.google.com/search?q={search_query}"
-    elif search_engine == "bing":
-        search_url = f"https://www.bing.com/search?q={search_query}"
+    elif search_engine == "yandex":
+        search_url = f"https://yandex.com/search/?text={search_query}"
     else:
         raise ValueError("Invalid search engine")
 
@@ -46,18 +46,18 @@ if search_engine == "google":
     for url in urls_google:
         print(url)
 
-    # 将搜索引擎设置为"bing"，继续执行搜索
-    search_engine = "bing"
+    # 将搜索引擎设置为"yandex"，继续执行搜索
+    search_engine = "yandex"
 
 # 使用必应搜索并随机调整请求头信息
-if search_engine == "bing":
-    urls_bing = extract_subscription_urls(search_query, "bing")
-    print("Bing Search Results:")
-    for url in urls_bing:
+if search_engine == "yandex":
+    urls_yandex = extract_subscription_urls(search_query, "yandex")
+    print("yandex Search Results:")
+    for url in urls_yandex:
         print(url)
 
-    # 合并Google和Bing的结果
-    urls = urls_google + urls_bing
+    # 合并Google和yandex的结果
+    urls = urls_google + urls_yandex
 
 # 保存提取到的订阅地址到文件中
 with open("furls", "w") as file:
