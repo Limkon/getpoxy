@@ -34,17 +34,6 @@ jobs:
           python extract_urls.py "$query"
         done
 
-    - name: Save URLs to file
-      run: |
-        if [[ -s furls ]]; then
-          echo "Search completed. Saving URLs to file."
-          cat furls >> urls_temp
-          mv urls_temp furls
-        else
-          echo "Search timed out or no URLs found. Generating empty furls file."
-          touch furls
-        fi
-
     - name: Commit and push changes
       run: |
         git config --local user.email "action@github.com"
