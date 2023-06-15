@@ -25,7 +25,7 @@ jobs:
         pip install beautifulsoup4
         pip install requests
 
-    - name: Extract URLs from Google Search
+    - name: Extract URLs from Search
       id: search
       run: |
         declare -a search_queries=("节点订阅" "节点池2023" "VEMSS节点订阅")
