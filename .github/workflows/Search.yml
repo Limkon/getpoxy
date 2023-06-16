@@ -11,33 +11,36 @@ jobs:
     timeout-minutes: 15
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.x'
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install beautifulsoup4
-        pip install requests
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install beautifulsoup4
+          pip install requests
 
-    - name: Extract URLs from Search
-      id: search
-      run: |
-        declare -a search_queries=("节点订阅" "节点池2023" "VEMSS节点订阅")
-        for query in "${search_queries[@]}"; do
-          echo "Searching for: $query"
-          python extract_urls.py "$query"
-        done
+      - name: Extract URLs from Search
+        id: search
+        run: |
+          declare -a search_queries=("节点订阅" "节点池2023" "VEMSS节点订阅")
+          for query in "${search_queries[@]}"; do
+            echo "Searching for: $query"
+            python extract_urls.py "$query"
+          done
 
-    - name: Commit and push changes
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add furls
-        git commit -m "Add extracted URLs"
-        git push
+      - name: Remove duplicate URLs
+        run: python remove_duplicates.py furls
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add furls
+          git commit -m "Add extracted URLs"
+          git push
