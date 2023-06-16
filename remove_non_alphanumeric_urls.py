@@ -9,15 +9,15 @@ def remove_non_alphanumeric_urls(filename):
         for line in file:
             line = line.strip()
 
-            # 检查行是否只包含字母和数字
-            if re.match(r'^[a-zA-Z0-9]+$', line):
+            # 检查行是否以字母或数字结尾，但保留以斜杠 "/" 结尾的网址
+            if re.match(r'^.*[a-zA-Z0-9/]+$', line):
                 lines_to_keep.append(line)
 
     # 将结果写回原文件
     with open(filename, 'w') as file:
         file.write('\n'.join(lines_to_keep))
 
-    print("已剔除包含非字母或数字字符的网址。")
+    print("已剔除不以字母或数字结尾（除斜杠“/”外）的网址。")
 
 # 获取命令行参数
 if len(sys.argv) != 2:
