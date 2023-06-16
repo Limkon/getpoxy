@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   
   schedule:
-    - cron: '0 12 */7 * *'
+    - cron: '0 12 10,20,1 * *'
 
 jobs:
   fetch-website-content:
