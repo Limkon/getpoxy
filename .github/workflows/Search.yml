@@ -34,8 +34,8 @@ jobs:
             python extract_urls.py "$query"
           done
 
-      - name: Remove duplicate URLs
-        run: python remove_duplicates.py furls
+    # - name: Remove duplicate URLs
+    #   run: python remove_duplicates.py furls
 
       - name: Commit and push changes
         run: |
