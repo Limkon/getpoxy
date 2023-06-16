@@ -34,8 +34,11 @@ jobs:
             python extract_urls.py "$query"
           done
 
-    # - name: Remove duplicate URLs
-    #   run: python remove_duplicates.py furls
+      - name: Remove duplicate URLs
+        run: python remove_duplicates.py furls
+        
+      - name: Remove non-alphanumeric URLs
+        run: python remove_non_alphanumeric_urls.py furls
 
       - name: Commit and push changes
         run: |
