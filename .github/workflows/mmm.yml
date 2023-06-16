@@ -32,6 +32,11 @@ jobs:
           if [ ! -d "bata" ]; then
             mkdir bata
           fi
+          
+      - name: 延时
+        run: |
+          delay=$((RANDOM % 59 + 1))
+          sleep "$delay"
         
       - name: 读取订阅
         env:
