@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   
   schedule:
-    - cron: '0 12 */7 * *'
+    - cron: '0 13 10,20,1 * *'
 
 jobs:
   fetch-website-content:
@@ -45,7 +45,7 @@ jobs:
       
       - name: 延时
         run: |
-          delay=$((RANDOM % 9 + 1))
+          delay=$((RANDOM % 59 + 1))
           sleep "$delay"
 
       - name: 读取订阅
