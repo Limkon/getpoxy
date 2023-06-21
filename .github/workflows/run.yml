@@ -1,4 +1,4 @@
-name: 读取订阅
+name: 读取节点
 
 on:
   workflow_dispatch:
