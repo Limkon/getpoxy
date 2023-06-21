@@ -28,7 +28,7 @@ for file in data_files:
                 merged_content.append(decoded_content)
             except Exception as e:
                 # 内容不是 Base64 编码，继续检测是否符合特定格式
-                if content.startswith("vmess://") or content.startswith("clash://") or content.startswith("ss://") or content.startswith("vlss://"):
+                if content.startswith("vmess://") or content.startswith("clash://") or content.startswith("ss://") or content.startswith("vlss://") or content.startswith("trojan://"):
                     merged_content.append(content)
                 else:
                     # 内容既不是 Base64 编码也不符合特定格式，跳过该文件并打印错误信息
