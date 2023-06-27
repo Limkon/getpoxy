@@ -27,6 +27,9 @@ jobs:
           npm install moment
           npm install base64-js
           
+      - name: Install PyYAML
+        run: pip install pyyaml
+
       - name: Remove duplicate URLs
         run: python remove_duplicates.py urls
 
