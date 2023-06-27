@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
+const yaml = require('js-yaml');
 
 (async () => {
   try {
@@ -21,8 +22,8 @@ const puppeteer = require('puppeteer-core');
       .map(url => url.trim())
       .filter(url => url !== '');
 
-    const successfulUrls = [];
-    const failedUrls = [];
+    const preservedFiles = []; // 用于存储保留的文件
+    const preservedUrls = []; // 用于存储保留的 URL
 
     for (const url of urls) {
       try {
@@ -63,16 +64,63 @@ const puppeteer = require('puppeteer-core');
             console.log(`通过自定义代码成功提取了 ${url} 的内容`);
           } else {
             console.error(`自定义代码也无法获取 ${url} 的内容`);
-            failedUrls.push(url);
             continue;
           }
         }
 
         // 检测内容是否为 BASE64 编码或特定格式
         if (!isBase64(content) && !isSpecialFormat(content)) {
-          console.error(`获取的 ${url} 内容既不是 BASE64 编码也不符合特定格式，将从 URL 列表中删除`);
-          failedUrls.push(url);
-          continue;
+          // 检测是否为 JSON 文件
+          let isJsonFile = false;
+          try {
+            const jsonContent = JSON.parse(content);
+            if (jsonContent && typeof jsonContent === 'object') {
+              isJsonFile = true;
+              // 在此处理 JSON 文件，例如保存到指定目录
+              const date = moment().format('YYYY-MM-DD');
+              const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
+              const fileName = path.join('json_files', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.json`);
+              fs.writeFileSync(fileName, content);
+              console.log(`网站 ${url} 内容是 JSON 文件，已保存至文件：${fileName}`);
+
+              // 保留文件和 URL
+              preservedFiles.push(fileName);
+              preservedUrls.push(url);
+            }
+          } catch (error) {
+            // 不是有效的 JSON 文件
+          }
+
+          // 检测是否为 YAML 文件
+          let isYamlFile = false;
+          try {
+            const yamlContent = yaml.safeLoad(content);
+            if (yamlContent && typeof yamlContent === 'object') {
+              isYamlFile = true;
+              // 在此处理 YAML 文件，例如保存到指定目录
+              const date = moment().format('YYYY-MM-DD');
+              const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
+              const fileName = path.join('yaml_files', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.yaml`);
+              fs.writeFileSync(fileName, content);
+              console.log(`网站 ${url} 内容是 YAML 文件，已保存至文件：${fileName}`);
+
+              // 保留文件和 URL
+              preservedFiles.push(fileName);
+              preservedUrls.push(url);
+            }
+          } catch (error) {
+            // 不是有效的 YAML 文件
+          }
+
+          // 如果内容不是 BASE64 编码、特定格式、JSON 文件或 YAML 文件，则跳过处理
+          if (!isJsonFile && !isYamlFile) {
+            const urlIndex = preservedUrls.indexOf(url);
+            if (urlIndex !== -1) {
+              preservedUrls.splice(urlIndex, 1);
+            }
+            console.error(`获取的 ${url} 内容既不是 BASE64 编码也不符合特定格式，将从 URL 列表中删除`);
+            continue;
+          }
         }
 
         const date = moment().format('YYYY-MM-DD');
@@ -81,16 +129,17 @@ const puppeteer = require('puppeteer-core');
 
         fs.writeFileSync(fileName, content);
 
-        successfulUrls.push(url);
+        preservedFiles.push(fileName);
+        preservedUrls.push(url);
         console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
       } catch (error) {
         console.error(`处理 ${url} 失败：${error.message}`);
-        failedUrls.push(url);
       }
     }
 
-    // 更新 URL 列表文件
-    updateUrlsFile(failedUrls);
+    // 更新 URL 列表文件，将保留的 URL 写回文件
+    fs.writeFileSync('urls', preservedUrls.join('\n'));
+    console.log('更新后的 URL 列表已保存到文件！');
 
     await browser.close();
     console.log('所有网站内容保存完成！');
@@ -108,16 +157,4 @@ function isBase64(str) {
 function isSpecialFormat(str) {
   const specialFormatRegex = /vmess:\/\/|clash:\/\/|ss:\/\/|vlss:\/\//;
   return specialFormatRegex.test(str);
-}
-
-function updateUrlsFile(failedUrls) {
-  const originalUrls = fs
-    .readFileSync('urls', 'utf-8')
-    .split('\n')
-    .map(url => url.trim());
-
-  const updatedUrls = originalUrls.filter(url => !failedUrls.includes(url));
-
-  fs.writeFileSync('urls', updatedUrls.join('\n'));
-  console.log('更新后的 URL 列表已保存到文件！');
 }
