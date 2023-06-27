@@ -1,6 +1,7 @@
 import os
 import base64
 import socket
+import yaml
 
 # 测试网址信息
 node_ip = "www.google.com"
@@ -18,9 +19,22 @@ for file in data_files:
     with open(file_path, "r") as f:
         content = f.read()
 
-        if file.endswith(".json") or file.endswith(".yaml"):
-            # 如果是 JSON 或 YAML 文件，直接跳过
-            continue
+        if file.endswith(".json"):
+            # 如果是 JSON 文件，尝试将其转换为 V2Ray（Vmess）格式
+            try:
+                json_data = json.loads(content)
+                v2ray_servers = convert_json_to_v2ray(json_data)
+                merged_content.extend(v2ray_servers)
+            except Exception as e:
+                print(f"Error processing JSON file {file}: {str(e)}")
+        elif file.endswith(".yaml"):
+            # 如果是 YAML 文件，尝试将其转换为 V2Ray（Vmess）格式
+            try:
+                yaml_data = yaml.safe_load(content)
+                v2ray_servers = convert_yaml_to_v2ray(yaml_data)
+                merged_content.extend(v2ray_servers)
+            except Exception as e:
+                print(f"Error processing YAML file {file}: {str(e)}")
         elif file.endswith(".txt"):
             try:
                 # 尝试解密 Base64 编码的内容
