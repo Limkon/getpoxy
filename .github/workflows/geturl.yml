@@ -35,7 +35,7 @@ jobs:
           
       - name: 延时
         run: |
-          delay=$((RANDOM % 59 + 1))
+          delay=$((RANDOM % 9 + 1))
           sleep "$delay"
         
       - name: 读取订阅
