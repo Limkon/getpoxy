@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
+const yaml = require('js-yaml');
+const { Worker } = require('worker_threads');
 
 (async () => {
   try {
@@ -9,25 +11,28 @@ const puppeteer = require('puppeteer-core');
       executablePath: 'google-chrome-stable',
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
-    const page = await browser.newPage();
-
-    // 将页面等待时间更改为 5000 毫秒
-    page.setDefaultTimeout(5000);
-
+    
     // 读取文件内容，获取所有要抓取的 URL 列表
     const urls = fs
-      .readFileSync('furls', 'utf-8')
+      .readFileSync('urls', 'utf-8')
       .split('\n')
       .map(url => url.trim())
       .filter(url => url !== '');
-
-    for (const url of urls) {
+      
+    const preservedFiles = []; // 用于存储保留的文件
+    const preservedUrls = []; // 用于存储保留的 URL
+    
+    const processUrl = async (url) => {
       try {
+        const page = await browser.newPage();
+        // 将页面等待时间更改为 5000 毫秒
+        page.setDefaultTimeout(5000);
+
         await page.goto(url);
 
         // 尝试不同的选择器
         const selectors = [
-          '#app',                 // ID 选择器        
+          '#app',                 // ID 选择器
         ];
 
         let content = '';
@@ -60,59 +65,124 @@ const puppeteer = require('puppeteer-core');
             console.log(`通过自定义代码成功提取了 ${url} 的内容`);
           } else {
             console.error(`自定义代码也无法获取 ${url} 的内容`);
-            continue;
+            return;
+          }
+        }
+
+        // 检测内容是否为 BASE64 编码或特定格式
+        if (!isBase64(content) && !isSpecialFormat(content)) {
+          // 检测是否为 JSON 文件
+          let isJsonFile = false;
+          try {
+            const jsonContent = JSON.parse(content);
+            if (jsonContent && typeof jsonContent === 'object') {
+              isJsonFile = true;
+              // 在此处理 JSON 文件，例如保存到指定目录
+              const date = moment().format('YYYY-MM-DD');
+              const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
+              const fileName = path.join('json_files', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.json`);
+              fs.writeFileSync(fileName, content);
+              console.log(`网站 ${url} 内容是 JSON 文件，已保存至文件：${fileName}`);
+
+              // 保留文件和 URL
+              preservedFiles.push(fileName);
+              preservedUrls.push(url);
+            }
+          } catch (error) {
+            // 不是有效的 JSON 文件
+          }
+
+          // 检测是否为 YAML 文件
+          let isYamlFile = false;
+          try {
+            const yamlContent = yaml.safeLoad(content);
+            if (yamlContent && typeof yamlContent === 'object') {
+              isYamlFile = true;
+              // 在此处理 YAML 文件，例如保存到指定目录
+              const date = moment().format('YYYY-MM-DD');
+              const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
+              const fileName = path.join('yaml_files', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.yaml`);
+              fs.writeFileSync(fileName, content);
+              console.log(`网站 ${url} 内容是 YAML 文件，已保存至文件：${fileName}`);
+
+              // 保留文件和 URL
+              preservedFiles.push(fileName);
+              preservedUrls.push(url);
+            }
+          } catch (error) {
+            // 不是有效的 YAML 文件
+          }
+
+          // 如果内容不是 BASE64 编码、特定格式、JSON 文件或 YAML 文件，则跳过处理
+          if (!isJsonFile && !isYamlFile) {
+            const urlIndex = preservedUrls.indexOf(url);
+            if (urlIndex !== -1) {
+              preservedUrls.splice(urlIndex, 1);
+            }
+            console.error(`获取的 ${url} 内容既不是 BASE64 编码也不符合特定格式，将从 URL 列表中删除`);
+            return;
           }
         }
 
         const date = moment().format('YYYY-MM-DD');
         const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
-        const fileName = path.join('bata', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.txt`);
+        const fileName = path.join('data', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.txt`);
 
         fs.writeFileSync(fileName, content);
 
+        preservedFiles.push(fileName);
+        preservedUrls.push(url);
         console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
       } catch (error) {
         console.error(`处理 ${url} 失败：${error.message}`);
       }
-    }
+    };
+
+    // 创建 Worker 线程处理每个 URL
+    const workers = urls.map(url => {
+      return new Worker(`
+        const { parentPort } = require('worker_threads');
+        ${processUrl.toString()}
+
+        parentPort.once('message', message => {
+          processUrl(message);
+        });
+      `);
+    });
+
+    // 向每个 Worker 线程发送 URL
+    workers.forEach((worker, index) => {
+      worker.postMessage(urls[index]);
+    });
+
+    // 监听 Worker 线程的完成事件
+    const completedPromises = workers.map(worker => {
+      return new Promise(resolve => {
+        worker.once('exit', resolve);
+      });
+    });
+
+    // 等待所有 Worker 线程完成
+    await Promise.all(completedPromises);
+
+    // 更新 URL 列表文件，将保留的 URL 写回文件
+    fs.writeFileSync('urls', preservedUrls.join('\n'));
+    console.log('更新后的 URL 列表已保存到文件！');
 
     await browser.close();
     console.log('所有网站内容保存完成！');
-
-    // 提取链接并追加到文件中
-    const directoryPath = 'bata';
-    const urlsFilePath = 'urls';
-
-    fs.readdir(directoryPath, (err, files) => {
-      if (err) {
-        console.error(`无法读取目录 ${directoryPath}：${err}`);
-        return;
-      }
-
-      const linkRegex = /(https?:\/\/[^\s]+)/g;
-      const links = [];
-
-      files.forEach((file) => {
-        const filePath = path.join(directoryPath, file);
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
-        const extractedLinks = fileContent.match(linkRegex);
-
-        if (extractedLinks) {
-          links.push(...extractedLinks);
-          console.log(`在文件 ${file} 中找到以下链接：`);
-          console.log(extractedLinks);
-        }
-      });
-
-      if (links.length > 0) {
-        fs.appendFileSync(urlsFilePath, links.join('\n'));
-        console.log(`链接已追加到文件 ${urlsFilePath}`);
-      } else {
-        console.log('没有找到链接需要追加到文件。');
-      }
-    });
   } catch (error) {
     console.error(error);
     process.exit(1);
   }
 })();
+
+function isBase64(str) {
+  const base64Regex = /^(data:.*?;base64,)?([A-Za-z0-9+/=])+$/;
+  return base64Regex.test(str);
+}
+
+function isSpecialFormat(str) {
+  const specialFormatRegex = /vmess:\/\/|trojan:\/\/|clash:\/\/|ss:\/\/|vlss:\/\//;
+  return specialFormatRegex.test(str);
+}
