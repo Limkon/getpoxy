@@ -132,6 +132,20 @@ function isSpecialFormat(str) {
         }
       });
 
+      // 如果没有找到符合条件的链接，则提取文件内容中的链接
+      if (links.length === 0) {
+        files.forEach((file) => {
+          const filePath = path.join(directoryPath, file);
+          const fileContent = fs.readFileSync(filePath, 'utf-8');
+          const extractedLinks = fileContent.match(linkRegex);
+          if (extractedLinks) {
+            links.push(...extractedLinks);
+            console.log(`在文件 ${file} 中找到以下链接：`);
+            console.log(extractedLinks);
+          }
+        });
+      }
+
       if (links.length > 0) {
         fs.appendFileSync(urlsFilePath, links.join('\n')); // 将链接追加到 "urls" 文件中
         console.log(`链接已追加到文件 ${urlsFilePath}`);
