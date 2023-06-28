@@ -3,7 +3,7 @@ const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
 const yaml = require('js-yaml');
-const pLimit = require('p-limit');
+const pLimit = await import('p-limit');
 
 (async () => {
   try {
