@@ -3,7 +3,7 @@ const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
 const yaml = require('js-yaml');
-const Queue = require('p-queue');
+const Queue = (await import('p-queue')).default;
 
 (async () => {
   try {
