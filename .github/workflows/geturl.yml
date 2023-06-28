@@ -25,8 +25,7 @@ jobs:
         run: |
           npm install puppeteer-core
           npm install moment
-          npm install base64-js
-          npm install p-queue
+          npm install base64-js       
 
       - name: 检查结果目录
         run: |         
