@@ -2,7 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
-const limit = require('p-limit');
+const PQueue = require('p-queue');
+const limit = new PQueue({ concurrency: concurrencyLimit });
 
 const concurrencyLimit = 15; // 同时处理的最大请求数
 
