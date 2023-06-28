@@ -76,6 +76,9 @@ jobs:
       - name: 清除 data 目录
         run: |
           find data/ -type f -exec rm {} +
+          
+      - name: 拉取远程更改
+        run: git pull origin master
 
       - name: 设置 Git 配置
         run: |
