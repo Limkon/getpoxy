@@ -18,7 +18,7 @@ const Queue = require('p-queue');
     page.setDefaultTimeout(5000);
 
     // 读取文件内容，获取所有要抓取的 URL 列表
-    const urls = fs
+    let urls = fs
       .readFileSync('urls', 'utf-8')
       .split('\n')
       .map(url => url.trim())
@@ -93,6 +93,9 @@ const Queue = require('p-queue');
               // 保留文件和 URL
               preservedFiles.push(fileName);
               preservedUrls.push(url);
+
+              // 追加 URL 到文件列表
+              urls.push(url);
             }
           } catch (error) {
             // 不是有效的 JSON 文件
@@ -114,6 +117,9 @@ const Queue = require('p-queue');
               // 保留文件和 URL
               preservedFiles.push(fileName);
               preservedUrls.push(url);
+
+              // 追加 URL 到文件列表
+              urls.push(url);
             }
           } catch (error) {
             // 不是有效的 YAML 文件
