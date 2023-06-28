@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
+const { Queue } = require('async');
 
 (async () => {
   try {
@@ -21,60 +22,69 @@ const puppeteer = require('puppeteer-core');
       .map(url => url.trim())
       .filter(url => url !== '');
 
+    // 创建线程池，设置并发处理的数量
+    const concurrency = 10; // 设置并发处理的数量
+    const queue = new Queue({ concurrency });
+
     for (const url of urls) {
-      try {
-        await page.goto(url);
+      queue.push(async () => {
+        try {
+          await page.goto(url);
 
-        // 尝试不同的选择器
-        const selectors = [
-          '#app',                 // ID 选择器        
-        ];
+          // 尝试不同的选择器
+          const selectors = [
+            '#app', // ID 选择器
+          ];
 
-        let content = '';
-        let success = false;
+          let content = '';
+          let success = false;
 
-        for (const selector of selectors) {
-          try {
-            await page.waitForSelector(selector);
-            const element = await page.$(selector);
-            content = await page.evaluate(element => element.innerText, element);
-            success = true;
-            break;
-          } catch (error) {
-            console.error(`尝试通过选择器 ${selector} 获取 ${url} 内容失败：${error.message}`);
+          for (const selector of selectors) {
+            try {
+              await page.waitForSelector(selector);
+              const element = await page.$(selector);
+              content = await page.evaluate(element => element.innerText, element);
+              success = true;
+              break;
+            } catch (error) {
+              console.error(`尝试通过选择器 ${selector} 获取 ${url} 内容失败：${error.message}`);
+            }
           }
-        }
 
-        // 如果所有选择器都失败，则执行自定义 JavaScript 代码提取页面内容
-        if (!success) {
-          console.error(`所有选择器都无法获取 ${url} 的内容，将执行自定义代码`);
+          // 如果所有选择器都失败，则执行自定义 JavaScript 代码提取页面内容
+          if (!success) {
+            console.error(`所有选择器都无法获取 ${url} 的内容，将执行自定义代码`);
 
-          const customContent = await page.evaluate(() => {
-            // 在此编写自定义的 JavaScript 代码来选择和提取页面内容
-            // 例如：返回整个页面的 innerText
-            return document.documentElement.innerText;
-          });
+            const customContent = await page.evaluate(() => {
+              // 在此编写自定义的 JavaScript 代码来选择和提取页面内容
+              // 例如：返回整个页面的 innerText
+              return document.documentElement.innerText;
+            });
 
-          if (customContent) {
-            content = customContent;
-            console.log(`通过自定义代码成功提取了 ${url} 的内容`);
-          } else {
-            console.error(`自定义代码也无法获取 ${url} 的内容`);
-            continue;
+            if (customContent) {
+              content = customContent;
+              console.log(`通过自定义代码成功提取了 ${url} 的内容`);
+            } else {
+              console.error(`自定义代码也无法获取 ${url} 的内容`);
+              return;
+            }
           }
+
+          const date = moment().format('YYYY-MM-DD');
+          const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
+          const fileName = path.join('bata', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.txt`);
+
+          fs.writeFileSync(fileName, content);
+
+          console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
+        } catch (error) {
+          console.error(`处理 ${url} 失败：${error.message}`);
         }
-
-        const date = moment().format('YYYY-MM-DD');
-        const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
-        const fileName = path.join('bata', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.txt`);
-
-        fs.writeFileSync(fileName, content);
-
-        console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
-      } catch (error) {
-        console.error(`处理 ${url} 失败：${error.message}`);
-      }
+      });
     }
+
+    // 等待所有任务完成
+    await queue.drain();
 
     await browser.close();
     console.log('所有网站内容保存完成！');
@@ -92,7 +102,7 @@ const puppeteer = require('puppeteer-core');
       const linkRegex = /(https?:\/\/[^\s]+)/g;
       const links = [];
 
-      files.forEach((file) => {
+      files.forEach(file => {
         const filePath = path.join(directoryPath, file);
         const fileContent = fs.readFileSync(filePath, 'utf-8');
         const extractedLinks = fileContent.match(linkRegex);
