@@ -28,7 +28,7 @@ const Queue = require('p-queue');
     const preservedUrls = []; // 用于存储保留的 URL
 
     // 创建线程池，设置并发处理的数量
-    const concurrency = 5; // 设置并发处理的数量
+    const concurrency = 10; // 设置并发处理的数量
     const queue = new Queue({ concurrency });
 
     // 定义任务处理函数
