@@ -3,6 +3,7 @@ const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
 const yaml = require('js-yaml');
+const Queue = require('p-queue');
 
 (async () => {
   try {
@@ -10,6 +11,7 @@ const yaml = require('js-yaml');
       executablePath: 'google-chrome-stable',
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
+
     const page = await browser.newPage();
 
     // 将页面等待时间更改为 5000 毫秒
@@ -25,13 +27,18 @@ const yaml = require('js-yaml');
     const preservedFiles = []; // 用于存储保留的文件
     const preservedUrls = []; // 用于存储保留的 URL
 
-    for (const url of urls) {
+    // 创建线程池，设置并发处理的数量
+    const concurrency = 5; // 设置并发处理的数量
+    const queue = new Queue({ concurrency });
+
+    // 定义任务处理函数
+    const processUrl = async (url) => {
       try {
         await page.goto(url);
 
         // 尝试不同的选择器
         const selectors = [
-          '#app',                 // ID 选择器
+          '#app', // ID 选择器
         ];
 
         let content = '';
@@ -64,7 +71,7 @@ const yaml = require('js-yaml');
             console.log(`通过自定义代码成功提取了 ${url} 的内容`);
           } else {
             console.error(`自定义代码也无法获取 ${url} 的内容`);
-            continue;
+            return;
           }
         }
 
@@ -119,7 +126,7 @@ const yaml = require('js-yaml');
               preservedUrls.splice(urlIndex, 1);
             }
             console.error(`获取的 ${url} 内容既不是 BASE64 编码也不符合特定格式，将从 URL 列表中删除`);
-            continue;
+            return;
           }
         }
 
@@ -135,7 +142,15 @@ const yaml = require('js-yaml');
       } catch (error) {
         console.error(`处理 ${url} 失败：${error.message}`);
       }
+    };
+
+    // 将任务添加到队列中
+    for (const url of urls) {
+      await queue.add(() => processUrl(url));
     }
+
+    // 等待所有任务完成
+    await queue.onIdle();
 
     // 更新 URL 列表文件，将保留的 URL 写回文件
     fs.writeFileSync('urls', preservedUrls.join('\n'));
