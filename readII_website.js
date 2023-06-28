@@ -2,8 +2,58 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 
-(async () => {
+const NUM_THREADS = 10; // 定义线程池中的线程数量
+
+if (isMainThread) {
+  mainThread();
+} else {
+  workerThread(workerData);
+}
+
+async function mainThread() {
+  try {
+    const urls = fs
+      .readFileSync('urls', 'utf-8')
+      .split('\n')
+      .map(url => url.trim())
+      .filter(url => url !== '');
+
+    // 创建一个线程池，并将URL列表分配给不同的线程
+    const threadPool = new Set();
+    const results = [];
+
+    for (let i = 0; i < NUM_THREADS; i++) {
+      const worker = new Worker(__filename, { workerData: urls.splice(0, urls.length / NUM_THREADS) });
+      threadPool.add(worker);
+    }
+
+    // 监听线程的消息事件，收集处理结果
+    for (const worker of threadPool) {
+      worker.on('message', result => {
+        results.push(result);
+      });
+
+      worker.on('error', error => {
+        console.error(`线程处理失败：${error}`);
+      });
+
+      worker.on('exit', () => {
+        threadPool.delete(worker);
+        if (threadPool.size === 0) {
+          // 所有线程都完成了任务，继续后续操作
+          processResults(results);
+        }
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+async function workerThread(urls) {
   try {
     const browser = await puppeteer.launch({
       executablePath: 'google-chrome-stable',
@@ -11,23 +61,14 @@ const puppeteer = require('puppeteer-core');
     });
     const page = await browser.newPage();
 
-    // 将页面等待时间更改为 5000 毫秒
     page.setDefaultTimeout(5000);
-
-    // 读取文件内容，获取所有要抓取的 URL 列表
-    const urls = fs
-      .readFileSync('furls', 'utf-8')
-      .split('\n')
-      .map(url => url.trim())
-      .filter(url => url !== '');
 
     for (const url of urls) {
       try {
         await page.goto(url);
 
-        // 尝试不同的选择器
         const selectors = [
-          '#app',                 // ID 选择器        
+          '#app',
         ];
 
         let content = '';
@@ -45,13 +86,9 @@ const puppeteer = require('puppeteer-core');
           }
         }
 
-        // 如果所有选择器都失败，则执行自定义 JavaScript 代码提取页面内容
         if (!success) {
           console.error(`所有选择器都无法获取 ${url} 的内容，将执行自定义代码`);
-
           const customContent = await page.evaluate(() => {
-            // 在此编写自定义的 JavaScript 代码来选择和提取页面内容
-            // 例如：返回整个页面的 innerText
             return document.documentElement.innerText;
           });
 
@@ -69,50 +106,49 @@ const puppeteer = require('puppeteer-core');
         const fileName = path.join('bata', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.txt`);
 
         fs.writeFileSync(fileName, content);
-
         console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
+
+        // 将处理结果发送给主线程
+        parentPort.postMessage({ url, success: true, fileName });
       } catch (error) {
         console.error(`处理 ${url} 失败：${error.message}`);
+        // 将处理结果发送给主线程
+        parentPort.postMessage({ url, success: false });
       }
     }
 
     await browser.close();
-    console.log('所有网站内容保存完成！');
-
-    // 提取链接并追加到文件中
-    const directoryPath = 'bata';
-    const urlsFilePath = 'urls';
-
-    fs.readdir(directoryPath, (err, files) => {
-      if (err) {
-        console.error(`无法读取目录 ${directoryPath}：${err}`);
-        return;
-      }
-
-      const linkRegex = /(https?:\/\/[^\s]+)/g;
-      const links = [];
-
-      files.forEach((file) => {
-        const filePath = path.join(directoryPath, file);
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
-        const extractedLinks = fileContent.match(linkRegex);
-
-        if (extractedLinks) {
-          links.push(...extractedLinks);
-          console.log(`在文件 ${file} 中找到以下链接：`);
-          console.log(extractedLinks);
-        }
-      });
-
-      if (links.length > 0) {
-        fs.appendFileSync(urlsFilePath, links.join('\n'));
-        console.log(`链接已追加到文件 ${urlsFilePath}`);
-      } else {
-        console.log('没有找到链接需要追加到文件。');
-      }
-    });
   } catch (error) {
     console.error(error);
     process.exit(1);
   }
-})();
+}
+
+function processResults(results) {
+  const directoryPath = 'bata';
+  const urlsFilePath = 'urls';
+  const linkRegex = /(https?:\/\/[^\s]+)/g;
+  const links = [];
+
+  results.forEach(result => {
+    const { url, success, fileName } = result;
+    if (success) {
+      const fileContent = fs.readFileSync(fileName, 'utf-8');
+      const extractedLinks = fileContent.match(linkRegex);
+      if (extractedLinks) {
+        links.push(...extractedLinks);
+        console.log(`在文件 ${fileName} 中找到以下链接：`);
+        console.log(extractedLinks);
+      }
+    } else {
+      console.error(`处理 ${url} 失败`);
+    }
+  });
+
+  if (links.length > 0) {
+    fs.appendFileSync(urlsFilePath, links.join('\n'));
+    console.log(`链接已追加到文件 ${urlsFilePath}`);
+  } else {
+    console.log('没有找到链接需要追加到文件。');
+  }
+}
