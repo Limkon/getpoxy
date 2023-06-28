@@ -27,6 +27,7 @@ jobs:
           npm install moment
           npm install base64-js
           npm install js-yaml
+          npm install p-limit
           
       - name: Install PyYAML
         run: pip install pyyaml
