@@ -1,9 +1,9 @@
+const { Worker, isMainThread, parentPort } = require('worker_threads');
 const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
 const yaml = require('js-yaml');
-const Queue = require('p-queue');
 
 (async () => {
   try {
