@@ -26,6 +26,7 @@ jobs:
           npm install puppeteer-core
           npm install moment
           npm install base64-js
+          npm ci
          
       - name: 检查结果目录
         run: |         
