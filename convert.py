@@ -4,7 +4,7 @@ import socket
 import yaml
 
 # 测试网址信息
-node_ip = "www.google.com"
+node_ip = "https://speed.cloudflare.com/"
 node_port = 80
 
 # 读取数据文件列表
