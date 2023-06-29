@@ -98,17 +98,17 @@ function isSpecialFormat(str) {
         const filePath = path.join(directoryPath, file);
         const fileContent = fs.readFileSync(filePath, 'utf-8');
 
-        // 检测是否为 JSON 文件
+        // 检测是否为 YAML 文件
         let parsedData = null;
         try {
-          parsedData = JSON.parse(fileContent);
+          const yaml = require('js-yaml');
+          parsedData = yaml.safeLoad(fileContent);
         } catch (error) {
-          // 如果不是 JSON 文件，继续检测是否为 YAML 文件
+          // 如果不是 YAML 文件，继续检测是否为 JSON 文件
           try {
-            const yaml = require('js-yaml');
-            parsedData = yaml.safeLoad(fileContent);
+            parsedData = JSON.parse(fileContent);
           } catch (error) {
-            console.error(`文件 ${file} 不是有效的 JSON 或 YAML 文件：${error}`);
+            console.error(`文件 ${file} 不是有效的 YAML 或 JSON 文件：${error}`);
             return;
           }
         }
