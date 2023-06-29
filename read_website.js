@@ -79,7 +79,7 @@ const yaml = require('js-yaml');
               // 在此处理 JSON 文件，例如保存到指定目录
               const date = moment().format('YYYY-MM-DD');
               const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
-              const fileName = path.join('json_files', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.json`);
+              const fileName = path.join('json_files', `${sanitizeFileName(urlWithoutProtocol)}_${date}.json`);
               fs.writeFileSync(fileName, content);
               console.log(`网站 ${url} 内容是 JSON 文件，已保存至文件：${fileName}`);
 
@@ -100,7 +100,7 @@ const yaml = require('js-yaml');
               // 在此处理 YAML 文件，例如保存到指定目录
               const date = moment().format('YYYY-MM-DD');
               const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
-              const fileName = path.join('yaml_files', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.yaml`);
+              const fileName = path.join('yaml_files', `${sanitizeFileName(urlWithoutProtocol)}_${date}.yaml`);
               fs.writeFileSync(fileName, content);
               console.log(`网站 ${url} 内容是 YAML 文件，已保存至文件：${fileName}`);
 
@@ -124,8 +124,7 @@ const yaml = require('js-yaml');
         }
 
         const date = moment().format('YYYY-MM-DD');
-        const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
-        const fileName = path.join('data', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.txt`);
+        const fileName = path.join('data', `${sanitizeFileName(url)}_${date}.txt`);
 
         fs.writeFileSync(fileName, content);
 
@@ -137,7 +136,6 @@ const yaml = require('js-yaml');
       }
     }
 
-    // 更新 URL 列表文件，将保留的 URL 写回文件
     fs.writeFileSync('urls', preservedUrls.join('\n'));
     console.log('更新后的 URL 列表已保存到文件！');
 
@@ -157,4 +155,9 @@ function isBase64(str) {
 function isSpecialFormat(str) {
   const specialFormatRegex = /vmess:\/\/|trojan:\/\/|clash:\/\/|ss:\/\/|vlss:\/\//;
   return specialFormatRegex.test(str);
+}
+
+function sanitizeFileName(url) {
+  const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
+  return urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_');
 }
