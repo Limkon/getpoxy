@@ -3,6 +3,7 @@ const path = require('path');
 const moment = require('moment');
 const puppeteer = require('puppeteer-core');
 const yaml = require('js-yaml');
+const axios = require('axios');
 
 (async () => {
   try {
@@ -27,6 +28,12 @@ const yaml = require('js-yaml');
 
     for (const url of urls) {
       try {
+        if (isDirectDownloadLink(url)) {
+          // 如果是直接下载链接，保存文件并进行处理
+          await handleDirectDownloadLink(url);
+          continue;
+        }
+
         await page.goto(url);
 
         // 尝试不同的选择器
@@ -157,4 +164,29 @@ function isBase64(str) {
 function isSpecialFormat(str) {
   const specialFormatRegex = /vmess:\/\/|trojan:\/\/|clash:\/\/|ss:\/\/|vlss:\/\//;
   return specialFormatRegex.test(str);
+}
+
+async function handleDirectDownloadLink(url) {
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const date = moment().format('YYYY-MM-DD');
+    const fileName = path.join('downloaded_files', `${date}_${path.basename(url)}`);
+    fs.writeFileSync(fileName, Buffer.from(response.data));
+    console.log(`直接下载文件 ${url} 已保存至文件：${fileName}`);
+
+    // 处理保存的文件，例如读取内容、解析、转换等
+    // 这里只是保存了文件，您可以根据需要添加自定义的文件处理逻辑
+
+    // 保留文件和 URL
+    preservedFiles.push(fileName);
+    preservedUrls.push(url);
+  } catch (error) {
+    console.error(`处理直接下载文件 ${url} 失败：${error.message}`);
+  }
+}
+
+function isDirectDownloadLink(url) {
+  // 根据您的需求，使用适当的方式判断 URL 是否是直接下载文件的链接
+  // 这里使用简单的方式，判断 URL 的扩展名是否为 .yaml
+  return url.toLowerCase().endsWith('.yaml');
 }
