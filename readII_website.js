@@ -1,160 +1,126 @@
-const fs = require('fs');
-const path = require('path');
-const moment = require('moment');
-const puppeteer = require('puppeteer-core');
+import os
+import re
+import sys
+import time
+import datetime
+import requests
+import concurrent.futures
+import base64
+import json
+import yaml
 
-// 检测内容是否为 BASE64 编码
-function isBase64(str) {
-  try {
-    return btoa(atob(str)) === str;
-  } catch (error) {
-    return false;
-  }
-}
+from bs4 import BeautifulSoup
 
-// 检测内容是否为特定格式
-function isSpecialFormat(str) {
-  const specialFormats = ['vmess://', 'trojan://', 'clash://', 'ss://', 'vlss://'];
-  return specialFormats.some(format => str.startsWith(format));
-}
 
-(async () => {
-  try {
-    const browser = await puppeteer.launch({
-      executablePath: 'google-chrome-stable',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-    const page = await browser.newPage();
-    // 将页面等待时间更改为 5000 毫秒
-    page.setDefaultTimeout(5000);
-    // 读取文件内容，获取所有要抓取的 URL 列表
-    const urls = fs
-      .readFileSync('furls', 'utf-8')
-      .split('\n')
-      .map(url => url.trim())
-      .filter(url => url !== '');
-    for (const url of urls) {
-      try {
-        await page.goto(url);
+def extract_content(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # 在此编写选择和提取页面内容的代码
+        # 例如：提取页面的文本内容
+        content = soup.get_text()
+        return content
+    else:
+        raise Exception(f"Failed to fetch content from URL: {url}")
 
-        // 尝试不同的选择器
-        const selectors = [
-          '#app',                 // ID 选择器        
-        ];
 
-        let content = '';
-        let success = false;
-        for (const selector of selectors) {
-          try {
-            await page.waitForSelector(selector);
-            const element = await page.$(selector);
-            content = await page.evaluate(element => element.innerText, element);
-            success = true;
-            break;
-          } catch (error) {
-            console.error(`尝试通过选择器 ${selector} 获取 ${url} 内容失败：${error.message}`);
-          }
-        }
-        // 如果所有选择器都失败，则执行自定义 JavaScript 代码提取页面内容
-        if (!success) {
-          console.error(`所有选择器都无法获取 ${url} 的内容，将执行自定义代码`);
-          const customContent = await page.evaluate(() => {
-            // 在此编写自定义的 JavaScript 代码来选择和提取页面内容
-            // 例如：返回整个页面的 innerText
-            return document.documentElement.innerText;
-          });
-          if (customContent) {
-            content = customContent;
-            console.log(`通过自定义代码成功提取了 ${url} 的内容`);
-          } else {
-            console.error(`自定义代码也无法获取 ${url} 的内容`);
-            continue;
-          }
-        }
-        const date = moment().format('YYYY-MM-DD');
-        const urlWithoutProtocol = url.replace(/^(https?:\/\/)/, '');
-        const fileName = path.join('bata', `${urlWithoutProtocol.replace(/[:?<>|"*\r\n/]/g, '_')}_${date}.txt`);
-        fs.writeFileSync(fileName, content);
-        console.log(`网站 ${url} 内容已保存至文件：${fileName}`);
-      } catch (error) {
-        console.error(`处理 ${url} 失败：${error.message}`);
-      }
-    }
-    await browser.close();
-    console.log('所有网站内容保存完成！');
+def save_content(content, output_dir, url):
+    date = datetime.datetime.now().strftime('%Y-%m-%d')
+    url_without_protocol = re.sub(r'^(https?://)', '', url)
+    file_name = os.path.join(output_dir, re.sub(r'[:?<>|\"*\r\n/]', '_', url_without_protocol) + "_" + date + ".txt")
+    with open(file_name, 'w', encoding='utf-8') as file:
+        file.write(content)
+    print(f"网站 {url} 内容已保存至文件：{file_name}")
+    return file_name
 
-    // 提取链接并追加到文件中
-    const directoryPath = 'bata';
-    const urlsFilePath = 'urls';
-    fs.readdir(directoryPath, (err, files) => {
-      if (err) {
-        console.error(`无法读取目录 ${directoryPath}：${err}`);
-        return;
-      }
-      const linkRegex = /(https?:\/\/[^\s]+)/g;
-      const links = [];
 
-      files.forEach((file) => {
-        const filePath = path.join(directoryPath, file);
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
+def process_url(url, output_dir, rest_urls_file):
+    try:
+        content = extract_content(url)
+        if is_yaml(content):
+            file_name = save_content(content, output_dir, url)
+            return f"处理 {url} 成功", file_name
+        elif is_json(content):
+            file_name = save_content(content, output_dir, url)
+            return f"处理 {url} 成功", file_name
+        elif has_specific_format(content):
+            file_name = save_content(content, output_dir, url)
+            return f"处理 {url} 成功", file_name
+        elif is_base64_encoded(content):
+            file_name = save_content(content, output_dir, url)
+            return f"处理 {url} 成功", file_name
+        else:
+            extract_and_save_links(content, rest_urls_file)
+            return f"处理 {url} 成功", None
+    except Exception as e:
+        return f"处理 {url} 失败：{str(e)}", None
 
-        // 检测是否为 YAML 文件
-        let parsedData = null;
-        try {
-          const yaml = require('js-yaml');
-          parsedData = yaml.safeLoad(fileContent);
-        } catch (error) {
-          // 如果不是 YAML 文件，继续检测是否为 JSON 文件
-          try {
-            parsedData = JSON.parse(fileContent);
-          } catch (error) {
-            console.error(`文件 ${file} 不是有效的 YAML 或 JSON 文件：${error}`);
-            return;
-          }
-        }
 
-        // 检测内容是否为 BASE64 编码或特定格式的链接
-        if (typeof parsedData === 'string') {
-          if (isBase64(parsedData) || isSpecialFormat(parsedData)) {
-            links.push(url); // 将文件对应的url链接追加到数组中
-            console.log(`在文件 ${file} 中找到链接：${url}`);
-          }
-        } else if (Array.isArray(parsedData)) {
-          for (const item of parsedData) {
-            if (typeof item === 'string') {
-              if (isBase64(item) || isSpecialFormat(item)) {
-                links.push(url); // 将文件对应的url链接追加到数组中
-                console.log(`在文件 ${file} 中找到链接：${url}`);
-                break; // 只需要添加一次链接即可
-              }
-            }
-          }
-        }
-      });
+def is_yaml(content):
+    try:
+        yaml.safe_load(content)
+        return True
+    except yaml.YAMLError:
+        return False
 
-      // 如果没有找到符合条件的链接，则提取文件内容中的链接
-      if (links.length === 0) {
-        files.forEach((file) => {
-          const filePath = path.join(directoryPath, file);
-          const fileContent = fs.readFileSync(filePath, 'utf-8');
-          const extractedLinks = fileContent.match(linkRegex);
-          if (extractedLinks) {
-            links.push(...extractedLinks);
-            console.log(`在文件 ${file} 中找到以下链接：`);
-            console.log(extractedLinks);
-          }
-        });
-      }
 
-      if (links.length > 0) {
-        fs.appendFileSync(urlsFilePath, links.join('\n')); // 将链接追加到 "urls" 文件中
-        console.log(`链接已追加到文件 ${urlsFilePath}`);
-      } else {
-        console.log('没有找到链接需要追加到文件。');
-      }
-    });
-  } catch (error) {
-    console.error(error);
-    process.exit(1);
-  }
-})();
+def is_json(content):
+    try:
+        json.loads(content)
+        return True
+    except ValueError:
+        return False
+
+
+def has_specific_format(content):
+    formats = ['vmess://', 'trojan://', 'clash://', 'ss://', 'vlss://']
+    return any(format in content for format in formats)
+
+
+def is_base64_encoded(content):
+    try:
+        base64.b64decode(content)
+        return True
+    except base64.binascii.Error:
+        return False
+
+
+def extract_and_save_links(content, rest_urls_file):
+    urls = re.findall(r'(https?://\S+)', content)
+    with open(rest_urls_file, 'a', encoding='utf-8') as file:
+        for url in urls:
+            file.write(url + '\n')
+
+
+def process_urls(urls, output_dir, num_threads, rest_urls_file):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = [executor.submit(process_url, url, output_dir, rest_urls_file) for url in urls]
+
+        for future in concurrent.futures.as_completed(futures):
+            result, file_name = future.result()
+            print(result)
+            if file_name:
+                os.remove(file_name)
+
+
+def main():
+    if len(sys.argv) != 5:
+        print("请提供要抓取的 URL 列表文件名、保存提取内容的目录、线程数和剩余 URL 文件名")
+        print("示例: python extract_urls.py urls.txt data 10 rest_urls.txt")
+        sys.exit(1)
+
+    urls_file = sys.argv[1]  # 存储要抓取的 URL 列表的文件名
+    output_dir = sys.argv[2]  # 保存提取内容的目录
+    num_threads = int(sys.argv[3])  # 线程数
+    rest_urls_file = sys.argv[4]  # 剩余 URL 文件名
+
+    with open(urls_file, 'r', encoding='utf-8') as file:
+        urls = [line.strip() for line in file]
+
+    process_urls(urls, output_dir, num_threads, rest_urls_file)
+
+    print('所有网站内容保存完成！')
+
+
+if __name__ == '__main__':
+    main()
