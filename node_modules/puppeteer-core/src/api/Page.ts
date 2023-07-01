@@ -1548,10 +1548,9 @@ export class Page extends EventEmitter {
    *   API usage, the navigation will resolve with `null`.
    */
   async waitForNavigation(
-    options?: WaitForOptions
-  ): Promise<HTTPResponse | null>;
-  async waitForNavigation(): Promise<HTTPResponse | null> {
-    throw new Error('Not implemented');
+    options: WaitForOptions = {}
+  ): Promise<HTTPResponse | null> {
+    return await this.mainFrame().waitForNavigation(options);
   }
 
   /**
@@ -2109,7 +2108,7 @@ export class Page extends EventEmitter {
   /**
    * Evaluates a function in the page's context and returns the result.
    *
-   * If the function passed to `page.evaluateHandle` returns a Promise, the
+   * If the function passed to `page.evaluate` returns a Promise, the
    * function will wait for the promise to resolve and return its value.
    *
    * @example
